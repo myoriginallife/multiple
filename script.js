@@ -40,6 +40,7 @@
     currentAnimal: null,
     friendsThisRun: new Set(),
     newlyCollected: new Set(),
+    musicPlaying: false,
     progress: loadProgress(),
   };
   state.muted = !!state.progress.muted;
@@ -62,7 +63,7 @@
   const selectNoneBtn = document.getElementById("selectNoneBtn");
   const startBtn = document.getElementById("startBtn");
   const startError = document.getElementById("startError");
-  const muteBtn = document.getElementById("muteBtn");
+  const muteBtns = document.querySelectorAll(".mute-toggle");
   const totalCoinsEl = document.getElementById("totalCoins");
   const bestComboEverEl = document.getElementById("bestComboEver");
 
@@ -137,6 +138,36 @@
     beep(880, 0.12, "triangle", 0.12);
     beep(1100, 0.12, "triangle", 0.24);
     beep(1320, 0.28, "triangle", 0.36);
+  }
+
+  // ---------- 배경음악 (짧은 루프 멜로디, 외부 파일 없음) ----------
+  const MELODY = [
+    { f: 523.25, d: 280 }, { f: 587.33, d: 280 }, { f: 659.25, d: 280 }, { f: 783.99, d: 280 },
+    { f: 659.25, d: 280 }, { f: 587.33, d: 280 }, { f: 523.25, d: 560 }, { f: 0, d: 140 },
+    { f: 659.25, d: 280 }, { f: 783.99, d: 280 }, { f: 880.0, d: 280 }, { f: 1046.5, d: 560 },
+    { f: 783.99, d: 280 }, { f: 659.25, d: 280 }, { f: 523.25, d: 560 }, { f: 0, d: 140 },
+  ];
+  let melodyIndex = 0;
+  let musicTimeoutId = null;
+
+  function playMusicNote() {
+    if (!state.musicPlaying) return;
+    const note = MELODY[melodyIndex % MELODY.length];
+    if (note.f > 0) beep(note.f, (note.d / 1000) * 0.85, "triangle", 0, 0.05);
+    melodyIndex += 1;
+    musicTimeoutId = setTimeout(playMusicNote, note.d);
+  }
+
+  function startMusic() {
+    if (state.musicPlaying) return;
+    state.musicPlaying = true;
+    melodyIndex = 0;
+    playMusicNote();
+  }
+
+  function stopMusic() {
+    state.musicPlaying = false;
+    clearTimeout(musicTimeoutId);
   }
 
   // ---------- 파티클(콘페티) ----------
@@ -273,13 +304,19 @@
     });
   });
 
-  muteBtn.addEventListener("click", () => {
-    state.muted = !state.muted;
-    state.progress.muted = state.muted;
-    saveProgress();
-    muteBtn.textContent = state.muted ? "🔇" : "🔊";
+  function syncMuteIcons() {
+    muteBtns.forEach((b) => (b.textContent = state.muted ? "🔇" : "🔊"));
+  }
+
+  muteBtns.forEach((b) => {
+    b.addEventListener("click", () => {
+      state.muted = !state.muted;
+      state.progress.muted = state.muted;
+      saveProgress();
+      syncMuteIcons();
+    });
   });
-  muteBtn.textContent = state.muted ? "🔇" : "🔊";
+  syncMuteIcons();
 
   // ---------- 문제 생성 ----------
   function randInt(min, max) {
@@ -339,6 +376,7 @@
 
     totalEl.textContent = String(state.questionCount);
     showScreen("game");
+    startMusic();
     renderQuestion();
   });
 
@@ -518,6 +556,7 @@
 
   function finishGame() {
     clearTimer();
+    stopMusic();
     progressBar.style.width = "100%";
 
     const accuracy = Math.round(((state.questionCount - state.everWrong.size) / state.questionCount) * 100);
@@ -583,6 +622,7 @@
   }
 
   retryBtn.addEventListener("click", () => {
+    ensureAudio();
     state.queue = buildQueue();
     state.pos = 0;
     state.clearedIds = new Set();
@@ -596,10 +636,12 @@
 
     totalEl.textContent = String(state.questionCount);
     showScreen("game");
+    startMusic();
     renderQuestion();
   });
 
   homeBtn.addEventListener("click", () => {
+    stopMusic();
     buildDanGrid();
     updateMetaStats();
     showScreen("start");
