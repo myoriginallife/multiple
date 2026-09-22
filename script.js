@@ -103,8 +103,16 @@
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (Ctx) audioCtx = new Ctx();
     }
-    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
   }
+
+  // 모바일 브라우저는 오디오 재생을 위해 사용자 제스처가 필요해서,
+  // 첫 터치/클릭이면 무엇이든 오디오 잠금을 풀 수 있도록 안전망을 하나 더 둔다.
+  ["pointerdown", "touchstart", "keydown"].forEach((evt) => {
+    document.addEventListener(evt, ensureAudio, { once: true, passive: true });
+  });
 
   function beep(freq, duration, type, delay, gainVal) {
     if (state.muted || !audioCtx) return;
@@ -114,7 +122,7 @@
     osc.type = type || "sine";
     osc.frequency.setValueAtTime(freq, t0);
     gain.gain.setValueAtTime(0, t0);
-    gain.gain.linearRampToValueAtTime(gainVal || 0.15, t0 + 0.01);
+    gain.gain.linearRampToValueAtTime(gainVal || 0.22, t0 + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
     osc.connect(gain).connect(audioCtx.destination);
     osc.start(t0);
@@ -153,7 +161,7 @@
   function playMusicNote() {
     if (!state.musicPlaying) return;
     const note = MELODY[melodyIndex % MELODY.length];
-    if (note.f > 0) beep(note.f, (note.d / 1000) * 0.85, "triangle", 0, 0.05);
+    if (note.f > 0) beep(note.f, (note.d / 1000) * 0.85, "triangle", 0, 0.09);
     melodyIndex += 1;
     musicTimeoutId = setTimeout(playMusicNote, note.d);
   }
