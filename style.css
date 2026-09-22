@@ -127,6 +127,7 @@ h1 {
 }
 
 .animal-dex .dex-slot {
+  position: relative;
   width: 34px;
   height: 34px;
   display: flex;
@@ -143,9 +144,43 @@ h1 {
   background: #fff8e1;
 }
 
+.animal-dex .dex-slot.collected.rare {
+  border-color: var(--accent-dark);
+  background: #e0f7fa;
+}
+
+.animal-dex .dex-slot.collected.shiny {
+  border-color: transparent;
+  background: linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(135deg, var(--gold), var(--combo), var(--accent)) border-box;
+  border-width: 2px;
+  border-style: solid;
+  animation: shinyGlow 1.8s infinite ease-in-out;
+}
+
+@keyframes shinyGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 202, 40, 0); }
+  50% { box-shadow: 0 0 8px rgba(255, 202, 40, 0.7); }
+}
+
 .animal-dex .dex-slot.locked {
   opacity: 0.4;
   filter: grayscale(1);
+}
+
+.animal-dex .dex-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.dex-summary {
+  font-size: 0.78rem;
+  color: var(--accent-dark);
+  font-weight: 700;
+  text-align: center;
 }
 
 .new-friends {
@@ -557,7 +592,7 @@ h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animal, .screen, .combo-popup, .hit-fx { animation: none !important; }
+  .animal, .screen, .combo-popup, .hit-fx, .dex-slot.shiny { animation: none !important; }
 }
 
 @media (max-width: 360px) {

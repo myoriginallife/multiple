@@ -5,11 +5,20 @@
   const STORAGE_KEY = "gugudanBattle_v1";
 
   function loadProgress() {
-    const fallback = { totalCoins: 0, bestCombo: 0, danStars: {}, collectedAnimals: [] };
+    const fallback = { totalCoins: 0, bestCombo: 0, danStars: {}, dexTier: {} };
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return fallback;
-      return Object.assign(fallback, JSON.parse(raw));
+      const parsed = Object.assign(fallback, JSON.parse(raw));
+      // 이전 버전 호환: collectedAnimals(단순 목록)만 있던 저장 데이터는
+      // 전부 "일반" 등급을 이미 모은 것으로 승격해준다.
+      if (Array.isArray(parsed.collectedAnimals)) {
+        parsed.collectedAnimals.forEach((animal) => {
+          if (!(animal in parsed.dexTier)) parsed.dexTier[animal] = 0;
+        });
+        delete parsed.collectedAnimals;
+      }
+      return parsed;
     } catch (e) {
       return fallback;
     }
@@ -48,6 +57,25 @@
   const CHEERS = ["참 잘했어요! 👏", "정답이에요! 😄", "최고예요! ⭐", "완벽해요! 🎯", "친구가 됐어요! 💕"];
   const CONSOLES = ["아쉬워요! 다시 도전!", "괜찮아요, 다음엔 맞출 거예요!", "조금만 더 힘내요! 🙂"];
 
+  // 등급: 일반(0) / 희귀(1) / 반짝이(2). 동물 하나당 3등급이라 도감 목표가
+  // 10마리 × 3등급 = 30개로 늘어나고, 연속 정답(콤보)이 쌓일수록 반짝이
+  // 확률이 올라가 실력과도 연결된다.
+  const RARITIES = [
+    { label: "일반", badge: "", className: "" },
+    { label: "희귀", badge: "✨", className: "rare" },
+    { label: "반짝이", badge: "🌟", className: "shiny" },
+  ];
+  const DUPLICATE_BONUS = 5;
+
+  function rollRarity(streak) {
+    const shinyChance = 0.05 + Math.min(streak, 10) * 0.01;
+    const rareChance = 0.22;
+    const r = Math.random();
+    if (r < shinyChance) return 2;
+    if (r < shinyChance + rareChance) return 1;
+    return 0;
+  }
+
   // ---------- 요소 ----------
   const screens = {
     start: document.getElementById("screen-start"),
@@ -74,6 +102,7 @@
   const heartFx = document.getElementById("heartFx");
   const timerBar = document.getElementById("timerBar");
   const animalDex = document.getElementById("animalDex");
+  const dexSummary = document.getElementById("dexSummary");
   const questionEl = document.getElementById("question");
   const choicesEl = document.getElementById("choices");
   const feedbackEl = document.getElementById("feedback");
@@ -168,14 +197,30 @@
   function renderAnimalDex() {
     animalDex.innerHTML = "";
     animalDex.style.gridTemplateColumns = `repeat(${Math.ceil(ANIMALS.length / 2)}, 1fr)`;
-    const collected = new Set(state.progress.collectedAnimals || []);
+
+    const counts = [0, 0, 0];
     ANIMALS.forEach((animal) => {
+      const tier = state.progress.dexTier[animal];
       const slot = document.createElement("div");
-      const has = collected.has(animal);
-      slot.className = `dex-slot ${has ? "collected" : "locked"}`;
-      slot.textContent = has ? animal : "❔";
+      if (tier == null) {
+        slot.className = "dex-slot locked";
+        slot.textContent = "❔";
+      } else {
+        counts[tier] += 1;
+        slot.className = `dex-slot collected ${RARITIES[tier].className}`;
+        slot.innerHTML = `<span class="dex-emoji">${animal}</span>`;
+        if (RARITIES[tier].badge) {
+          slot.innerHTML += `<span class="dex-badge">${RARITIES[tier].badge}</span>`;
+        }
+      }
       animalDex.appendChild(slot);
     });
+
+    const total = ANIMALS.length * RARITIES.length;
+    const collected = counts[0] + counts[1] + counts[2];
+    dexSummary.textContent =
+      `일반 ${counts[0]} · 희귀 ${counts[1]} · 반짝이 ${counts[2]}` +
+      ` (총 ${collected}/${total})`;
   }
 
   function buildDanGrid() {
@@ -399,7 +444,19 @@
       const elapsed = performance.now() - state.questionStartTime;
       const speedBonus = elapsed < 2000 ? 5 : 0;
       const comboBonus = state.streak * 2;
-      const coinsEarned = 10 + comboBonus + speedBonus;
+      let coinsEarned = 10 + comboBonus + speedBonus;
+
+      const tier = rollRarity(state.streak);
+      const animal = state.currentAnimal;
+      const prevTier = state.progress.dexTier[animal];
+      const isNewBest = prevTier == null || tier > prevTier;
+      if (isNewBest) {
+        state.progress.dexTier[animal] = tier;
+        state.newlyCollected.add(`${animal}|${tier}`);
+      } else {
+        coinsEarned += DUPLICATE_BONUS;
+      }
+      state.friendsThisRun.add(animal);
       state.coinsThisRun += coinsEarned;
 
       state.streak += 1;
@@ -408,13 +465,12 @@
       showComboPopup(state.streak);
 
       state.clearedIds.add(q.id);
-      if (!state.progress.collectedAnimals.includes(state.currentAnimal)) {
-        state.progress.collectedAnimals.push(state.currentAnimal);
-        state.newlyCollected.add(state.currentAnimal);
-      }
-      state.friendsThisRun.add(state.currentAnimal);
 
-      feedbackEl.textContent = `${CHEERS[randInt(0, CHEERS.length - 1)]} +${coinsEarned} 하트`;
+      let cheer;
+      if (tier === 2) cheer = `🌟 반짝이 ${animal} 발견!!`;
+      else if (tier === 1) cheer = `✨ 희귀 ${animal} 만남!`;
+      else cheer = CHEERS[randInt(0, CHEERS.length - 1)];
+      feedbackEl.textContent = `${cheer} +${coinsEarned} 하트`;
       feedbackEl.className = "feedback correct";
     } else {
       shyAway();
@@ -502,8 +558,12 @@
     resultBadge.textContent = badge;
 
     if (state.newlyCollected.size > 0) {
-      const names = [...state.newlyCollected].join(" ");
-      setTimeout(() => showToast(`새로운 친구를 만났어요! ${names}`), 400);
+      const parts = [...state.newlyCollected].map((key) => {
+        const [animal, tierStr] = key.split("|");
+        const badge = RARITIES[Number(tierStr)].badge;
+        return badge ? `${badge}${animal}` : animal;
+      });
+      setTimeout(() => showToast(`도감 갱신! ${parts.join(" ")}`), 400);
     }
 
     // 영속 데이터 갱신
