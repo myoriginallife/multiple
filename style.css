@@ -114,6 +114,47 @@ h1 {
   font-size: 0.95rem;
 }
 
+.animal-dex {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  background: #f6fbfc;
+  border-radius: 14px;
+  width: 100%;
+}
+
+.animal-dex .dex-slot {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e0e0e0;
+  font-size: 1.2rem;
+}
+
+.animal-dex .dex-slot.collected {
+  border-color: var(--gold);
+  background: #fff8e1;
+}
+
+.animal-dex .dex-slot.locked {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.new-friends {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 1.6rem;
+  min-height: 1.6rem;
+}
+
 .dan-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -289,7 +330,7 @@ h1 {
   margin: 6px 0;
 }
 
-.monster-wrap {
+.animal-wrap {
   position: relative;
   display: flex;
   align-items: center;
@@ -298,7 +339,7 @@ h1 {
   height: 88px;
 }
 
-.monster {
+.animal {
   font-size: 4rem;
   animation: float 1.8s infinite ease-in-out;
   transition: transform 0.15s ease, opacity 0.15s ease;
@@ -309,25 +350,26 @@ h1 {
   50% { transform: translateY(-8px) rotate(2deg); }
 }
 
-.monster.hit {
-  animation: monsterHit 0.4s ease;
+.animal.happy {
+  animation: animalHappy 0.5s ease;
 }
 
-@keyframes monsterHit {
-  0% { transform: scale(1); filter: brightness(1); }
-  30% { transform: scale(1.25) rotate(8deg); filter: brightness(2) saturate(0); }
-  60% { transform: scale(0.7) rotate(-10deg); opacity: 0.4; }
-  100% { transform: scale(0); opacity: 0; }
+@keyframes animalHappy {
+  0% { transform: scale(1) rotate(0); }
+  30% { transform: scale(1.3) rotate(-8deg); }
+  60% { transform: scale(1.15) rotate(8deg) translateY(-14px); }
+  100% { transform: scale(1) rotate(0) translateY(0); }
 }
 
-.monster.attack {
-  animation: monsterAttack 0.4s ease;
+.animal.shy {
+  animation: animalShy 0.5s ease;
 }
 
-@keyframes monsterAttack {
-  0%, 100% { transform: translateX(0) scale(1); }
-  30% { transform: translateX(-14px) scale(1.15); }
-  60% { transform: translateX(10px) scale(1.1); }
+@keyframes animalShy {
+  0%, 100% { transform: rotate(0) scale(1); }
+  25% { transform: rotate(-10deg) scale(0.95) translateY(4px); }
+  50% { transform: rotate(8deg) scale(0.92); }
+  75% { transform: rotate(-6deg) scale(0.95); }
 }
 
 .hit-fx {
@@ -447,18 +489,6 @@ h1 {
   100% { opacity: 0; transform: translate(-50%, -90%) scale(0.9); }
 }
 
-.screen.shake {
-  animation: screenShake 0.35s ease;
-}
-
-@keyframes screenShake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-8px); }
-  40% { transform: translateX(7px); }
-  60% { transform: translateX(-5px); }
-  80% { transform: translateX(4px); }
-}
-
 /* 결과 화면 */
 .stars-row {
   font-size: 2.4rem;
@@ -525,11 +555,11 @@ h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .monster, .screen, .combo-popup, .hit-fx { animation: none !important; }
+  .animal, .screen, .combo-popup, .hit-fx { animation: none !important; }
 }
 
 @media (max-width: 360px) {
   .question { font-size: 1.9rem; }
   .choice-btn { font-size: 1.3rem; padding: 16px 0; }
-  .monster { font-size: 3.2rem; }
+  .animal { font-size: 3.2rem; }
 }

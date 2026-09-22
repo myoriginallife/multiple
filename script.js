@@ -5,7 +5,7 @@
   const STORAGE_KEY = "gugudanBattle_v1";
 
   function loadProgress() {
-    const fallback = { totalCoins: 0, bestCombo: 0, danStars: {}, muted: false };
+    const fallback = { totalCoins: 0, bestCombo: 0, danStars: {}, muted: false, collectedAnimals: [] };
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return fallback;
@@ -37,13 +37,16 @@
     bestStreakRun: 0,
     locked: false,
     questionStartTime: 0,
+    currentAnimal: null,
+    friendsThisRun: new Set(),
+    newlyCollected: new Set(),
     progress: loadProgress(),
   };
   state.muted = !!state.progress.muted;
 
   const TIME_LIMIT = 7000;
-  const MONSTERS = ["🐛", "🐸", "🦎", "🐍", "🦂", "🐙", "👾", "👹", "🐲"];
-  const CHEERS = ["참 잘했어요! 👏", "정답이에요! 😄", "최고예요! ⭐", "완벽해요! 🎯", "명중!! 💥"];
+  const ANIMALS = ["🐰", "🐼", "🦊", "🐶", "🐱", "🐻", "🐨", "🐹", "🦁"];
+  const CHEERS = ["참 잘했어요! 👏", "정답이에요! 😄", "최고예요! ⭐", "완벽해요! 🎯", "친구가 됐어요! 💕"];
   const CONSOLES = ["아쉬워요! 다시 도전!", "괜찮아요, 다음엔 맞출 거예요!", "조금만 더 힘내요! 🙂"];
 
   // ---------- 요소 ----------
@@ -69,9 +72,10 @@
   const progressEl = document.getElementById("progress");
   const totalEl = document.getElementById("total");
   const progressBar = document.getElementById("progressBar");
-  const monsterEl = document.getElementById("monster");
-  const hitFx = document.getElementById("hitFx");
+  const animalEl = document.getElementById("animal");
+  const heartFx = document.getElementById("heartFx");
   const timerBar = document.getElementById("timerBar");
+  const animalDex = document.getElementById("animalDex");
   const questionEl = document.getElementById("question");
   const choicesEl = document.getElementById("choices");
   const feedbackEl = document.getElementById("feedback");
@@ -84,6 +88,7 @@
   const resultBestStreak = document.getElementById("resultBestStreak");
   const resultCoins = document.getElementById("resultCoins");
   const resultBadge = document.getElementById("resultBadge");
+  const newFriendsEl = document.getElementById("newFriends");
   const shareBtn = document.getElementById("shareBtn");
   const retryBtn = document.getElementById("retryBtn");
   const homeBtn = document.getElementById("homeBtn");
@@ -203,6 +208,19 @@
   function updateMetaStats() {
     totalCoinsEl.textContent = String(state.progress.totalCoins);
     bestComboEverEl.textContent = String(state.progress.bestCombo);
+    renderAnimalDex();
+  }
+
+  function renderAnimalDex() {
+    animalDex.innerHTML = "";
+    const collected = new Set(state.progress.collectedAnimals || []);
+    ANIMALS.forEach((animal) => {
+      const slot = document.createElement("div");
+      const has = collected.has(animal);
+      slot.className = `dex-slot ${has ? "collected" : "locked"}`;
+      slot.textContent = has ? animal : "❔";
+      animalDex.appendChild(slot);
+    });
   }
 
   function buildDanGrid() {
@@ -316,6 +334,8 @@
     state.coinsThisRun = 0;
     state.streak = 0;
     state.bestStreakRun = 0;
+    state.friendsThisRun = new Set();
+    state.newlyCollected = new Set();
 
     totalEl.textContent = String(state.questionCount);
     showScreen("game");
@@ -359,10 +379,11 @@
     progressEl.textContent = String(state.clearedIds.size);
     progressBar.style.width = `${(state.clearedIds.size / state.questionCount) * 100}%`;
 
-    monsterEl.textContent = MONSTERS[randInt(0, MONSTERS.length - 1)];
-    monsterEl.style.opacity = "1";
-    monsterEl.style.transform = "";
-    monsterEl.classList.remove("hit", "attack");
+    state.currentAnimal = ANIMALS[randInt(0, ANIMALS.length - 1)];
+    animalEl.textContent = state.currentAnimal;
+    animalEl.style.opacity = "1";
+    animalEl.style.transform = "";
+    animalEl.classList.remove("happy", "shy");
 
     questionEl.textContent = `${q.a} × ${q.b} = ?`;
     feedbackEl.textContent = "";
@@ -386,23 +407,20 @@
     comboHud.classList.add("pulse");
   }
 
-  function popMonster() {
-    monsterEl.classList.remove("hit");
-    void monsterEl.offsetWidth;
-    monsterEl.classList.add("hit");
-    hitFx.textContent = ["💥", "✨", "⭐", "💫"][randInt(0, 3)];
-    hitFx.classList.remove("show");
-    void hitFx.offsetWidth;
-    hitFx.classList.add("show");
+  function popFriend() {
+    animalEl.classList.remove("happy");
+    void animalEl.offsetWidth;
+    animalEl.classList.add("happy");
+    heartFx.textContent = ["💕", "✨", "⭐", "💫"][randInt(0, 3)];
+    heartFx.classList.remove("show");
+    void heartFx.offsetWidth;
+    heartFx.classList.add("show");
   }
 
-  function attackFlash() {
-    monsterEl.classList.remove("attack");
-    void monsterEl.offsetWidth;
-    monsterEl.classList.add("attack");
-    screens.game.classList.remove("shake");
-    void screens.game.offsetWidth;
-    screens.game.classList.add("shake");
+  function shyAway() {
+    animalEl.classList.remove("shy");
+    void animalEl.offsetWidth;
+    animalEl.classList.add("shy");
   }
 
   function showComboPopup(n) {
@@ -415,7 +433,7 @@
     comboPopup.classList.remove("show");
     void comboPopup.offsetWidth;
     comboPopup.classList.add("show");
-    burstAt(monsterEl, 22);
+    burstAt(animalEl, 22);
     playCombo();
   }
 
@@ -430,7 +448,7 @@
     const isCorrect = !timedOut && choice === q.answer;
 
     if (isCorrect) {
-      popMonster();
+      popFriend();
       playCorrect();
       btn.classList.add("correct");
 
@@ -446,11 +464,16 @@
       showComboPopup(state.streak);
 
       state.clearedIds.add(q.id);
+      if (!state.progress.collectedAnimals.includes(state.currentAnimal)) {
+        state.progress.collectedAnimals.push(state.currentAnimal);
+        state.newlyCollected.add(state.currentAnimal);
+      }
+      state.friendsThisRun.add(state.currentAnimal);
 
-      feedbackEl.textContent = `${CHEERS[randInt(0, CHEERS.length - 1)]} +${coinsEarned} 코인`;
+      feedbackEl.textContent = `${CHEERS[randInt(0, CHEERS.length - 1)]} +${coinsEarned} 하트`;
       feedbackEl.className = "feedback correct";
     } else {
-      attackFlash();
+      shyAway();
       playWrong();
       if (btn) btn.classList.add("wrong");
       const correctBtn = buttons.find((b) => Number(b.textContent) === q.answer);
@@ -511,15 +534,22 @@
       el.textContent = i < stars ? "★" : "☆";
     });
 
+    newFriendsEl.innerHTML = "";
+    state.friendsThisRun.forEach((animal) => {
+      const span = document.createElement("span");
+      span.textContent = animal;
+      newFriendsEl.appendChild(span);
+    });
+
     let title, badge;
     if (stars === 3) {
-      title = "🏆 완벽한 승리!";
-      badge = "구구단 마스터 뱃지 획득! 최강이에요 🥇";
+      title = "🏆 완벽한 우정!";
+      badge = "구구단 마스터 뱃지 획득! 최고예요 🥇";
     } else if (stars === 2) {
-      title = "🎉 멋진 승리!";
+      title = "🎉 멋진 성공!";
       badge = "실력자 뱃지 획득! 조금만 더 하면 별 3개예요 🥈";
     } else if (stars === 1) {
-      title = "👍 승리했어요!";
+      title = "👍 성공했어요!";
       badge = "계속 도전하면 금방 늘 거예요 🥉";
     } else {
       title = "💪 다시 도전해봐요!";
@@ -527,6 +557,11 @@
     }
     resultTitle.textContent = title;
     resultBadge.textContent = badge;
+
+    if (state.newlyCollected.size > 0) {
+      const names = [...state.newlyCollected].join(" ");
+      setTimeout(() => showToast(`새로운 친구를 만났어요! ${names}`), 400);
+    }
 
     // 영속 데이터 갱신
     state.progress.totalCoins += state.coinsThisRun;
@@ -556,6 +591,8 @@
     state.coinsThisRun = 0;
     state.streak = 0;
     state.bestStreakRun = 0;
+    state.friendsThisRun = new Set();
+    state.newlyCollected = new Set();
 
     totalEl.textContent = String(state.questionCount);
     showScreen("game");
@@ -572,12 +609,12 @@
   shareBtn.addEventListener("click", async () => {
     const stars = starsRow.querySelectorAll(".star.filled").length;
     const text =
-      `🎮 구구단 배틀 결과!\n` +
+      `🐾 구구단 동물 친구 결과!\n` +
       `${"⭐".repeat(stars)}${"☆".repeat(3 - stars)} ${resultDans.textContent} 도전\n` +
-      `정답률 ${resultAccuracy.textContent} · 최고 콤보 ${resultBestStreak.textContent} · 코인 ${resultCoins.textContent}개\n\n` +
+      `정답률 ${resultAccuracy.textContent} · 최고 콤보 ${resultBestStreak.textContent} · 하트 ${resultCoins.textContent}개\n\n` +
       `나도 도전해보기 👉`;
 
-    const shareData = { title: "구구단 배틀 결과", text, url: location.href };
+    const shareData = { title: "구구단 동물 친구 결과", text, url: location.href };
 
     if (navigator.share) {
       try {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>구구단 배틀</title>
+<title>구구단 동물 친구</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
@@ -19,13 +19,15 @@
     <section id="screen-start" class="screen active">
       <button id="muteBtn" class="mute-btn" title="소리 켜기/끄기">🔊</button>
 
-      <h1>🎮 구구단 배틀</h1>
-      <p class="subtitle">몬스터를 물리치고 구구단 마스터가 되자!</p>
+      <h1>🐾 구구단 동물 친구</h1>
+      <p class="subtitle">정답을 맞히고 귀여운 동물 친구를 모아보자!</p>
 
       <div class="meta-stats">
-        <div class="meta-chip">🪙 <span id="totalCoins">0</span></div>
+        <div class="meta-chip">💖 <span id="totalCoins">0</span></div>
         <div class="meta-chip">🔥 최고 콤보 <span id="bestComboEver">0</span></div>
       </div>
+
+      <div class="animal-dex" id="animalDex"></div>
 
       <p class="subtitle">도전할 단을 골라보세요!</p>
       <div class="dan-grid" id="danGrid"></div>
@@ -42,14 +44,14 @@
         <button class="btn count-btn" data-count="20">20문제</button>
       </div>
 
-      <button class="btn primary big" id="startBtn">배틀 시작! ⚔️</button>
+      <button class="btn primary big" id="startBtn">모험 시작! 🐾</button>
       <p class="error-msg" id="startError"></p>
     </section>
 
     <!-- 게임 화면 -->
     <section id="screen-game" class="screen">
       <div class="hud">
-        <div class="hud-item">🪙 <span id="coins">0</span></div>
+        <div class="hud-item">💖 <span id="coins">0</span></div>
         <div class="hud-item combo-hud" id="comboHud">🔥 <span id="streak">0</span></div>
         <div class="hud-item">📋 <span id="progress">0</span> / <span id="total">15</span></div>
       </div>
@@ -59,9 +61,9 @@
       </div>
 
       <div class="arena">
-        <div class="monster-wrap">
-          <div class="monster" id="monster">🐛</div>
-          <div class="hit-fx" id="hitFx"></div>
+        <div class="animal-wrap">
+          <div class="animal" id="animal">🐰</div>
+          <div class="hit-fx" id="heartFx"></div>
         </div>
         <div class="timer-bar-outer">
           <div class="timer-bar-inner" id="timerBar"></div>
@@ -78,17 +80,19 @@
 
     <!-- 결과 화면 -->
     <section id="screen-result" class="screen">
-      <h1 id="resultTitle">🎉 승리!</h1>
+      <h1 id="resultTitle">🎉 성공!</h1>
 
       <div class="stars-row" id="starsRow">
         <span class="star">☆</span><span class="star">☆</span><span class="star">☆</span>
       </div>
 
+      <div class="new-friends" id="newFriends"></div>
+
       <div class="result-card">
         <div class="result-row"><span>클리어한 단</span><span id="resultDans">-</span></div>
         <div class="result-row"><span>정답률</span><span id="resultAccuracy">0%</span></div>
         <div class="result-row"><span>최고 콤보</span><span id="resultBestStreak">0</span></div>
-        <div class="result-row"><span>획득 코인</span><span id="resultCoins">0</span></div>
+        <div class="result-row"><span>모은 하트</span><span id="resultCoins">0</span></div>
       </div>
       <div id="resultBadge" class="result-badge"></div>
 
