@@ -46,7 +46,7 @@
   state.muted = !!state.progress.muted;
 
   const TIME_LIMIT = 7000;
-  const ANIMALS = ["🐰", "🐼", "🦊", "🐶", "🐱", "🐻", "🐨", "🐹", "🦁"];
+  const ANIMALS = ["🐰", "🐼", "🦊", "🐶", "🐱", "🐻", "🐨", "🐹", "🦁", "🐷"];
   const CHEERS = ["참 잘했어요! 👏", "정답이에요! 😄", "최고예요! ⭐", "완벽해요! 🎯", "친구가 됐어요! 💕"];
   const CONSOLES = ["아쉬워요! 다시 도전!", "괜찮아요, 다음엔 맞출 거예요!", "조금만 더 힘내요! 🙂"];
 
@@ -234,6 +234,7 @@
 
   function renderAnimalDex() {
     animalDex.innerHTML = "";
+    animalDex.style.gridTemplateColumns = `repeat(${Math.ceil(ANIMALS.length / 2)}, 1fr)`;
     const collected = new Set(state.progress.collectedAnimals || []);
     ANIMALS.forEach((animal) => {
       const slot = document.createElement("div");

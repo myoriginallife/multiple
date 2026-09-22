@@ -115,9 +115,10 @@ h1 {
 }
 
 .animal-dex {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-auto-rows: 34px;
+  justify-items: center;
+  align-items: center;
   gap: 6px;
   padding: 8px;
   background: #f6fbfc;
