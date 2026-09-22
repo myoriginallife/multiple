@@ -1,0 +1,304 @@
+:root {
+  --bg1: #fef6e4;
+  --bg2: #e0f7fa;
+  --primary: #ff8a65;
+  --primary-dark: #f4511e;
+  --accent: #4dd0e1;
+  --accent-dark: #00acc1;
+  --correct: #66bb6a;
+  --wrong: #ef5350;
+  --text: #4a4a4a;
+  --card-bg: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  background: linear-gradient(160deg, var(--bg1), var(--bg2));
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+
+.app {
+  width: 100%;
+  max-width: 480px;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 28px 20px;
+  box-shadow: 0 10px 30px var(--shadow);
+  animation: fadeIn 0.35s ease;
+}
+
+.screen.active {
+  display: flex;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  margin: 6px 0;
+  font-weight: bold;
+  color: var(--accent-dark);
+}
+
+.dan-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.dan-btn {
+  padding: 16px 0;
+  border-radius: 16px;
+  border: 3px solid var(--accent);
+  background: white;
+  color: var(--accent-dark);
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.dan-btn:active {
+  transform: scale(0.92);
+}
+
+.dan-btn.selected {
+  background: var(--accent);
+  color: white;
+}
+
+.dan-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.count-grid {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.count-btn {
+  flex: 1;
+}
+
+.btn {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background: #eee;
+  color: var(--text);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.94);
+}
+
+.btn.small {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
+.btn.selected {
+  background: var(--accent);
+  color: white;
+}
+
+.btn.primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn.primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn.big {
+  width: 100%;
+  padding: 16px;
+  font-size: 1.15rem;
+  margin-top: 8px;
+  border-radius: 18px;
+}
+
+.error-msg {
+  color: var(--wrong);
+  font-weight: bold;
+  min-height: 1.2em;
+  margin: 0;
+}
+
+/* 게임 화면 */
+.hud {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-weight: bold;
+  color: var(--accent-dark);
+  font-size: 0.95rem;
+}
+
+.hud-item span {
+  color: var(--primary-dark);
+}
+
+.progress-bar-outer {
+  width: 100%;
+  height: 10px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-bar-inner {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--primary));
+  transition: width 0.3s ease;
+}
+
+.question-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.mascot {
+  font-size: 2.6rem;
+  animation: bounce 1.6s infinite ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.question {
+  font-size: 2.4rem;
+  font-weight: bold;
+  color: var(--primary-dark);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+.choice-btn {
+  padding: 20px 0;
+  font-size: 1.6rem;
+  font-weight: bold;
+  border-radius: 16px;
+  border: 3px solid var(--accent);
+  background: white;
+  color: var(--accent-dark);
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.choice-btn:active {
+  transform: scale(0.94);
+}
+
+.choice-btn.correct {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: white;
+}
+
+.choice-btn.wrong {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: white;
+}
+
+.choice-btn:disabled {
+  cursor: default;
+}
+
+.feedback {
+  min-height: 1.6em;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.feedback.correct {
+  color: var(--correct);
+}
+
+.feedback.wrong {
+  color: var(--wrong);
+}
+
+/* 결과 화면 */
+.result-card {
+  width: 100%;
+  background: #fafafa;
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 1.05rem;
+}
+
+.result-row span:last-child {
+  color: var(--primary-dark);
+}
+
+.result-badge {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--accent-dark);
+  margin: 4px 0;
+}
+
+@media (max-width: 360px) {
+  .question {
+    font-size: 1.9rem;
+  }
+  .choice-btn {
+    font-size: 1.3rem;
+    padding: 16px 0;
+  }
+}

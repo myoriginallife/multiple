@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>구구단 게임</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- 시작 화면 -->
+    <section id="screen-start" class="screen active">
+      <h1>🧮 구구단 게임</h1>
+      <p class="subtitle">연습하고 싶은 단을 골라보세요!</p>
+
+      <div class="dan-grid" id="danGrid">
+        <!-- 2~9단 버튼이 여기 생성됩니다 -->
+      </div>
+
+      <div class="dan-actions">
+        <button class="btn small" id="selectAllBtn">전체 선택</button>
+        <button class="btn small" id="selectNoneBtn">선택 해제</button>
+      </div>
+
+      <p class="subtitle">문제 개수를 골라보세요!</p>
+      <div class="count-grid" id="countGrid">
+        <button class="btn count-btn" data-count="10">10문제</button>
+        <button class="btn count-btn selected" data-count="15">15문제</button>
+        <button class="btn count-btn" data-count="20">20문제</button>
+      </div>
+
+      <button class="btn primary big" id="startBtn">게임 시작! 🚀</button>
+      <p class="error-msg" id="startError"></p>
+    </section>
+
+    <!-- 게임 화면 -->
+    <section id="screen-game" class="screen">
+      <div class="hud">
+        <div class="hud-item">⭐ 점수 <span id="score">0</span></div>
+        <div class="hud-item">🔥 연속 <span id="streak">0</span></div>
+        <div class="hud-item">📋 <span id="progress">1</span> / <span id="total">15</span></div>
+      </div>
+
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar"></div>
+      </div>
+
+      <div class="question-box">
+        <div class="mascot" id="mascot">🦊</div>
+        <div class="question" id="question">3 × 4 = ?</div>
+      </div>
+
+      <div class="choices" id="choices">
+        <!-- 보기 버튼 4개 -->
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+    </section>
+
+    <!-- 결과 화면 -->
+    <section id="screen-result" class="screen">
+      <h1 id="resultTitle">🎉 완료!</h1>
+      <div class="result-card">
+        <div class="result-row"><span>맞은 문제</span><span id="resultCorrect">0 / 0</span></div>
+        <div class="result-row"><span>정답률</span><span id="resultAccuracy">0%</span></div>
+        <div class="result-row"><span>최고 연속 정답</span><span id="resultBestStreak">0</span></div>
+        <div class="result-row"><span>최종 점수</span><span id="resultScore">0</span></div>
+      </div>
+      <div id="resultBadge" class="result-badge"></div>
+      <button class="btn primary big" id="retryBtn">다시 도전하기 🔁</button>
+      <button class="btn big" id="homeBtn">단 다시 고르기</button>
+    </section>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
