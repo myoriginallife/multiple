@@ -5,7 +5,7 @@
   const STORAGE_KEY = "gugudanBattle_v1";
 
   function loadProgress() {
-    const fallback = { totalCoins: 0, bestCombo: 0, danStars: {}, muted: false, collectedAnimals: [] };
+    const fallback = { totalCoins: 0, bestCombo: 0, danStars: {}, collectedAnimals: [] };
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return fallback;
@@ -40,10 +40,8 @@
     currentAnimal: null,
     friendsThisRun: new Set(),
     newlyCollected: new Set(),
-    musicPlaying: false,
     progress: loadProgress(),
   };
-  state.muted = !!state.progress.muted;
 
   const TIME_LIMIT = 7000;
   const ANIMALS = ["🐰", "🐼", "🦊", "🐶", "🐱", "🐻", "🐨", "🐹", "🦁", "🐷"];
@@ -63,7 +61,6 @@
   const selectNoneBtn = document.getElementById("selectNoneBtn");
   const startBtn = document.getElementById("startBtn");
   const startError = document.getElementById("startError");
-  const muteBtns = document.querySelectorAll(".mute-toggle");
   const totalCoinsEl = document.getElementById("totalCoins");
   const bestComboEverEl = document.getElementById("bestComboEver");
 
@@ -93,72 +90,8 @@
   const shareBtn = document.getElementById("shareBtn");
   const retryBtn = document.getElementById("retryBtn");
   const homeBtn = document.getElementById("homeBtn");
+  const homeBtnGame = document.getElementById("homeBtnGame");
   const toastEl = document.getElementById("toast");
-
-  // ---------- 사운드 (미리 만든 짧은 <audio> 파일 재생) ----------
-  // iOS Safari는 Web Audio(오실레이터)의 자동 재생을 여러 조건에서 막는
-  // 경우가 있어, 실제 비디오/오디오 재생과 동일한 신뢰도를 갖는 <audio>
-  // 엘리먼트 방식으로 재생한다.
-  const sfxCorrect = document.getElementById("sfxCorrect");
-  const sfxWrong = document.getElementById("sfxWrong");
-  const sfxCombo = document.getElementById("sfxCombo");
-  const sfxVictory = document.getElementById("sfxVictory");
-  const bgm = document.getElementById("bgm");
-  const ALL_AUDIO = [sfxCorrect, sfxWrong, sfxCombo, sfxVictory, bgm].filter(Boolean);
-
-  let audioPrimed = false;
-  function primeAudio() {
-    if (audioPrimed) return;
-    audioPrimed = true;
-    ALL_AUDIO.forEach((el) => {
-      const p = el.play();
-      if (p && p.catch) {
-        p.then(() => {
-          el.pause();
-          el.currentTime = 0;
-        }).catch(() => {});
-      }
-    });
-  }
-
-  // 모바일 브라우저는 첫 사용자 제스처 안에서 재생을 시작해야 이후의
-  // 자동 재생(타이머로 예약된 소리 등)도 허용해주므로, 첫 터치/클릭/키
-  // 입력 시점에 모든 오디오 엘리먼트를 한 번씩 "예열"해둔다.
-  ["pointerdown", "touchstart", "keydown"].forEach((evt) => {
-    document.addEventListener(evt, primeAudio, { once: true, passive: true });
-  });
-
-  function playSfx(el) {
-    if (state.muted || !el) return;
-    try {
-      el.currentTime = 0;
-      el.play().catch(() => {});
-    } catch (e) {
-      /* 재생 실패해도 게임 진행에는 영향 없음 */
-    }
-  }
-
-  function playCorrect() { playSfx(sfxCorrect); }
-  function playWrong() { playSfx(sfxWrong); }
-  function playCombo() { playSfx(sfxCombo); }
-  function playVictory() { playSfx(sfxVictory); }
-
-  function startMusic() {
-    if (state.musicPlaying) return;
-    state.musicPlaying = true;
-    if (!state.muted && bgm) {
-      bgm.currentTime = 0;
-      bgm.play().catch(() => {});
-    }
-  }
-
-  function stopMusic() {
-    state.musicPlaying = false;
-    if (bgm) {
-      bgm.pause();
-      bgm.currentTime = 0;
-    }
-  }
 
   // ---------- 파티클(콘페티) ----------
   const fxCanvas = document.getElementById("fx");
@@ -295,24 +228,6 @@
     });
   });
 
-  function syncMuteIcons() {
-    muteBtns.forEach((b) => (b.textContent = state.muted ? "🔇" : "🔊"));
-  }
-
-  muteBtns.forEach((b) => {
-    b.addEventListener("click", () => {
-      state.muted = !state.muted;
-      state.progress.muted = state.muted;
-      saveProgress();
-      syncMuteIcons();
-      if (bgm) {
-        if (state.muted) bgm.pause();
-        else if (state.musicPlaying) bgm.play().catch(() => {});
-      }
-    });
-  });
-  syncMuteIcons();
-
   // ---------- 문제 생성 ----------
   function randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -356,7 +271,6 @@
       return;
     }
     startError.textContent = "";
-    primeAudio();
 
     state.queue = buildQueue();
     state.pos = 0;
@@ -371,7 +285,6 @@
 
     totalEl.textContent = String(state.questionCount);
     showScreen("game");
-    startMusic();
     renderQuestion();
   });
 
@@ -467,7 +380,6 @@
     void comboPopup.offsetWidth;
     comboPopup.classList.add("show");
     burstAt(animalEl, 22);
-    playCombo();
   }
 
   function handleAnswer(choice, btn, q, timedOut) {
@@ -482,7 +394,6 @@
 
     if (isCorrect) {
       popFriend();
-      playCorrect();
       btn.classList.add("correct");
 
       const elapsed = performance.now() - state.questionStartTime;
@@ -507,7 +418,6 @@
       feedbackEl.className = "feedback correct";
     } else {
       shyAway();
-      playWrong();
       if (btn) btn.classList.add("wrong");
       const correctBtn = buttons.find((b) => Number(b.textContent) === q.answer);
       if (correctBtn) correctBtn.classList.add("correct");
@@ -551,7 +461,6 @@
 
   function finishGame() {
     clearTimer();
-    stopMusic();
     progressBar.style.width = "100%";
 
     const accuracy = Math.round(((state.questionCount - state.everWrong.size) / state.questionCount) * 100);
@@ -608,7 +517,6 @@
     updateMetaStats();
 
     if (stars > 0) {
-      playVictory();
       const rect = starsRow.getBoundingClientRect();
       burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 40);
     }
@@ -617,7 +525,6 @@
   }
 
   retryBtn.addEventListener("click", () => {
-    primeAudio();
     state.queue = buildQueue();
     state.pos = 0;
     state.clearedIds = new Set();
@@ -631,16 +538,19 @@
 
     totalEl.textContent = String(state.questionCount);
     showScreen("game");
-    startMusic();
     renderQuestion();
   });
 
-  homeBtn.addEventListener("click", () => {
-    stopMusic();
+  function goHome() {
+    clearTimer();
+    state.locked = true;
     buildDanGrid();
     updateMetaStats();
     showScreen("start");
-  });
+  }
+
+  homeBtn.addEventListener("click", goHome);
+  homeBtnGame.addEventListener("click", goHome);
 
   // ---------- 결과 공유 ----------
   shareBtn.addEventListener("click", async () => {

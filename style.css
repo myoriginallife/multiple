@@ -82,7 +82,7 @@ h1 {
   color: var(--accent-dark);
 }
 
-.mute-btn {
+.corner-btn {
   position: absolute;
   top: 14px;
   right: 14px;
@@ -95,7 +95,7 @@ h1 {
   cursor: pointer;
 }
 
-.mute-btn:active {
+.corner-btn:active {
   transform: scale(0.9);
 }
 
