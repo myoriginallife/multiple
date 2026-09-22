@@ -95,96 +95,69 @@
   const homeBtn = document.getElementById("homeBtn");
   const toastEl = document.getElementById("toast");
 
-  // ---------- 사운드 (Web Audio, 외부 파일 없음) ----------
-  let audioCtx = null;
+  // ---------- 사운드 (미리 만든 짧은 <audio> 파일 재생) ----------
+  // iOS Safari는 Web Audio(오실레이터)의 자동 재생을 여러 조건에서 막는
+  // 경우가 있어, 실제 비디오/오디오 재생과 동일한 신뢰도를 갖는 <audio>
+  // 엘리먼트 방식으로 재생한다.
+  const sfxCorrect = document.getElementById("sfxCorrect");
+  const sfxWrong = document.getElementById("sfxWrong");
+  const sfxCombo = document.getElementById("sfxCombo");
+  const sfxVictory = document.getElementById("sfxVictory");
+  const bgm = document.getElementById("bgm");
+  const ALL_AUDIO = [sfxCorrect, sfxWrong, sfxCombo, sfxVictory, bgm].filter(Boolean);
 
-  const silentUnlock = document.getElementById("silentUnlock");
-
-  function ensureAudio() {
-    if (!audioCtx) {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (Ctx) audioCtx = new Ctx();
-    }
-    if (audioCtx && audioCtx.state === "suspended") {
-      audioCtx.resume().catch(() => {});
-    }
-    // iPhone Safari mutes Web Audio output when the hardware silent switch is
-    // on, unless the page has an actual <audio>/<video> element playing at
-    // least once — that flips the tab's audio session to "playback", which
-    // is allowed to ignore the switch. This nudges that without being audible.
-    if (silentUnlock && silentUnlock.paused) {
-      silentUnlock.play().catch(() => {});
-    }
+  let audioPrimed = false;
+  function primeAudio() {
+    if (audioPrimed) return;
+    audioPrimed = true;
+    ALL_AUDIO.forEach((el) => {
+      const p = el.play();
+      if (p && p.catch) {
+        p.then(() => {
+          el.pause();
+          el.currentTime = 0;
+        }).catch(() => {});
+      }
+    });
   }
 
-  // 모바일 브라우저는 오디오 재생을 위해 사용자 제스처가 필요해서,
-  // 첫 터치/클릭이면 무엇이든 오디오 잠금을 풀 수 있도록 안전망을 하나 더 둔다.
+  // 모바일 브라우저는 첫 사용자 제스처 안에서 재생을 시작해야 이후의
+  // 자동 재생(타이머로 예약된 소리 등)도 허용해주므로, 첫 터치/클릭/키
+  // 입력 시점에 모든 오디오 엘리먼트를 한 번씩 "예열"해둔다.
   ["pointerdown", "touchstart", "keydown"].forEach((evt) => {
-    document.addEventListener(evt, ensureAudio, { once: true, passive: true });
+    document.addEventListener(evt, primeAudio, { once: true, passive: true });
   });
 
-  function beep(freq, duration, type, delay, gainVal) {
-    if (state.muted || !audioCtx) return;
-    const t0 = audioCtx.currentTime + (delay || 0);
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = type || "sine";
-    osc.frequency.setValueAtTime(freq, t0);
-    gain.gain.setValueAtTime(0, t0);
-    gain.gain.linearRampToValueAtTime(gainVal || 0.22, t0 + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start(t0);
-    osc.stop(t0 + duration + 0.02);
+  function playSfx(el) {
+    if (state.muted || !el) return;
+    try {
+      el.currentTime = 0;
+      el.play().catch(() => {});
+    } catch (e) {
+      /* 재생 실패해도 게임 진행에는 영향 없음 */
+    }
   }
 
-  function playCorrect() {
-    beep(880, 0.12, "triangle");
-    beep(1320, 0.14, "triangle", 0.08);
-  }
-  function playWrong() {
-    beep(220, 0.25, "sawtooth");
-  }
-  function playCombo() {
-    beep(660, 0.1, "square");
-    beep(880, 0.1, "square", 0.09);
-    beep(1100, 0.14, "square", 0.18);
-  }
-  function playVictory() {
-    beep(660, 0.12, "triangle");
-    beep(880, 0.12, "triangle", 0.12);
-    beep(1100, 0.12, "triangle", 0.24);
-    beep(1320, 0.28, "triangle", 0.36);
-  }
-
-  // ---------- 배경음악 (짧은 루프 멜로디, 외부 파일 없음) ----------
-  const MELODY = [
-    { f: 523.25, d: 280 }, { f: 587.33, d: 280 }, { f: 659.25, d: 280 }, { f: 783.99, d: 280 },
-    { f: 659.25, d: 280 }, { f: 587.33, d: 280 }, { f: 523.25, d: 560 }, { f: 0, d: 140 },
-    { f: 659.25, d: 280 }, { f: 783.99, d: 280 }, { f: 880.0, d: 280 }, { f: 1046.5, d: 560 },
-    { f: 783.99, d: 280 }, { f: 659.25, d: 280 }, { f: 523.25, d: 560 }, { f: 0, d: 140 },
-  ];
-  let melodyIndex = 0;
-  let musicTimeoutId = null;
-
-  function playMusicNote() {
-    if (!state.musicPlaying) return;
-    const note = MELODY[melodyIndex % MELODY.length];
-    if (note.f > 0) beep(note.f, (note.d / 1000) * 0.85, "triangle", 0, 0.09);
-    melodyIndex += 1;
-    musicTimeoutId = setTimeout(playMusicNote, note.d);
-  }
+  function playCorrect() { playSfx(sfxCorrect); }
+  function playWrong() { playSfx(sfxWrong); }
+  function playCombo() { playSfx(sfxCombo); }
+  function playVictory() { playSfx(sfxVictory); }
 
   function startMusic() {
     if (state.musicPlaying) return;
     state.musicPlaying = true;
-    melodyIndex = 0;
-    playMusicNote();
+    if (!state.muted && bgm) {
+      bgm.currentTime = 0;
+      bgm.play().catch(() => {});
+    }
   }
 
   function stopMusic() {
     state.musicPlaying = false;
-    clearTimeout(musicTimeoutId);
+    if (bgm) {
+      bgm.pause();
+      bgm.currentTime = 0;
+    }
   }
 
   // ---------- 파티클(콘페티) ----------
@@ -331,6 +304,10 @@
       state.progress.muted = state.muted;
       saveProgress();
       syncMuteIcons();
+      if (bgm) {
+        if (state.muted) bgm.pause();
+        else if (state.musicPlaying) bgm.play().catch(() => {});
+      }
     });
   });
   syncMuteIcons();
@@ -378,7 +355,7 @@
       return;
     }
     startError.textContent = "";
-    ensureAudio();
+    primeAudio();
 
     state.queue = buildQueue();
     state.pos = 0;
@@ -639,7 +616,7 @@
   }
 
   retryBtn.addEventListener("click", () => {
-    ensureAudio();
+    primeAudio();
     state.queue = buildQueue();
     state.pos = 0;
     state.clearedIds = new Set();
