@@ -98,6 +98,8 @@
   // ---------- 사운드 (Web Audio, 외부 파일 없음) ----------
   let audioCtx = null;
 
+  const silentUnlock = document.getElementById("silentUnlock");
+
   function ensureAudio() {
     if (!audioCtx) {
       const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -105,6 +107,13 @@
     }
     if (audioCtx && audioCtx.state === "suspended") {
       audioCtx.resume().catch(() => {});
+    }
+    // iPhone Safari mutes Web Audio output when the hardware silent switch is
+    // on, unless the page has an actual <audio>/<video> element playing at
+    // least once — that flips the tab's audio session to "playback", which
+    // is allowed to ignore the switch. This nudges that without being audible.
+    if (silentUnlock && silentUnlock.paused) {
+      silentUnlock.play().catch(() => {});
     }
   }
 
